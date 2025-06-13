@@ -79,6 +79,8 @@
   </div>
 
   <script>
+    let currentToken = '';
+
     function showSection(sectionId) {
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.getElementById(sectionId).classList.add('active');
@@ -117,6 +119,7 @@
         log.textContent = text;
 
         if (res.ok) {
+          currentToken = token;
           showSection('dashboard');
         }
       } catch (err) {
@@ -125,9 +128,22 @@
       }
     }
 
-    function enableCommand(cmd) {
-      alert(`✅ '${cmd}' command enabled (simulated)`);
-      // Here you could POST to /api/commands if you want to store it in DB
+    async function enableCommand(command) {
+      if (!currentToken) {
+        alert('❌ No bot connected.');
+        return;
+      }
+      try {
+        const res = await fetch('/enable-command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: currentToken, command })
+        });
+        const text = await res.text();
+        alert(text);
+      } catch (err) {
+        alert('❌ Failed to enable command.');
+      }
     }
   </script>
 </body>
