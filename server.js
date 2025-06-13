@@ -1,4 +1,3 @@
-// === server.js ===
 const express = require('express');
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const { Pool } = require('pg');
@@ -10,7 +9,7 @@ const port = process.env.PORT || 3000;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
 });
 
 app.use(express.json());
@@ -55,7 +54,7 @@ app.post('/start-bot', async (req, res) => {
   }
 });
 
-// Commands API
+// === COMMANDS ===
 app.get('/api/commands', async (req, res) => {
   const { rows } = await pool.query('SELECT * FROM commands ORDER BY id DESC');
   res.json(rows);
@@ -68,7 +67,7 @@ app.post('/api/commands', async (req, res) => {
   res.send('✅ Command saved');
 });
 
-// Settings API
+// === SETTINGS ===
 app.get('/api/settings', async (req, res) => {
   const { rows } = await pool.query('SELECT * FROM settings LIMIT 1');
   res.json(rows[0]);
@@ -80,7 +79,7 @@ app.post('/api/settings', async (req, res) => {
   res.send('✅ Settings updated');
 });
 
-// Logs API
+// === LOGS ===
 app.get('/api/logs', async (req, res) => {
   const { rows } = await pool.query('SELECT * FROM logs ORDER BY timestamp DESC LIMIT 20');
   res.json(rows);
@@ -90,6 +89,38 @@ async function saveLog(message) {
   await pool.query('INSERT INTO logs (message) VALUES ($1)', [message]);
 }
 
-app.listen(port, () => {
+// === Ensure tables exist ===
+async function createTablesIfNotExist() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS commands (
+        id SERIAL PRIMARY KEY,
+        command TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS settings (
+        id SERIAL PRIMARY KEY,
+        prefix TEXT DEFAULT '!',
+        example_setting TEXT DEFAULT 'on'
+      );
+
+      CREATE TABLE IF NOT EXISTS logs (
+        id SERIAL PRIMARY KEY,
+        message TEXT,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      INSERT INTO settings (prefix, example_setting)
+      SELECT '!', 'on'
+      WHERE NOT EXISTS (SELECT 1 FROM settings);
+    `);
+    console.log('✅ Database tables checked/created');
+  } catch (err) {
+    console.error('❌ Failed to initialize tables:', err);
+  }
+}
+
+app.listen(port, async () => {
+  await createTablesIfNotExist();
   console.log(`🌐 Server running at http://localhost:${port}`);
 });
