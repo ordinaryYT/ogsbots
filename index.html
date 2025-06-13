@@ -1,4 +1,4 @@
-<!-- Save as: index.html -->
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,10 +40,7 @@
 
   <div id="dashboard" class="section">
     <h1>Bot Dashboard</h1>
-    <input type="text" id="prefixInput" placeholder="Command Prefix (e.g. !)">
-    <input type="text" id="commandInput" placeholder="Sample Command (e.g. ping)">
-    <br>
-    <button class="btn" onclick="saveSettings()">Save Settings</button>
+    <p>Your bot is running. Use <code>!ping</code> in your server to test it.</p>
   </div>
 
   <div class="footer">
@@ -75,12 +72,6 @@
         }).catch(() => {
           alert('Server error.');
         });
-    }
-
-    function saveSettings() {
-      const prefix = document.getElementById('prefixInput').value;
-      const command = document.getElementById('commandInput').value;
-      alert(`Saved!\nPrefix: ${prefix}\nCommand: ${command}`);
     }
   </script>
 </body>
