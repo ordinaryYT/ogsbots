@@ -3,117 +3,77 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ogbots</title>
+  <title>Ogbots Dashboard</title>
   <style>
-    body {
-      background-color: #1a1d29;
-      color: white;
-      font-family: Arial, sans-serif;
-      margin: 0; padding: 0;
-    }
-    .nav {
-      display: flex;
-      justify-content: space-around;
-      padding: 10px;
-      border-bottom: 1px solid #fff;
-      cursor: pointer;
-    }
-    .nav div:hover {
-      background-color: #333;
-    }
-    .nav div.active {
-      border-bottom: 3px solid #ffb800;
-      font-weight: bold;
-    }
-    .section {
-      display: none;
-      text-align: center;
-      padding: 50px;
-    }
-    .active {
-      display: block;
-    }
-    .btn {
-      background-color: #ffb800;
-      color: black;
-      padding: 10px 20px;
-      border: none;
-      cursor: pointer;
-      margin: 10px;
-      font-weight: bold;
-      font-size: 16px;
-    }
-    input {
-      width: 300px;
-      padding: 10px;
-      margin: 10px auto;
-      display: block;
-      font-size: 16px;
-      border-radius: 5px;
-      border: none;
-    }
-    .footer {
-      text-align: center;
-      padding: 20px;
-      font-size: 14px;
-      color: #bbb;
-    }
-    a {
-      color: #ffb800;
-      text-decoration: none;
-    }
-    #log {
-      margin-top: 20px;
-      color: lightgreen;
-      font-weight: bold;
-    }
+    body { background-color: #1a1d29; color: white; font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .nav { display: flex; justify-content: space-around; flex-wrap: wrap; padding: 10px; border-bottom: 1px solid #fff; cursor: pointer; }
+    .nav div:hover { background-color: #333; }
+    .nav div.active { border-bottom: 3px solid #ffb800; font-weight: bold; }
+    .section { display: none; text-align: center; padding: 50px; }
+    .active { display: block; }
+    .btn { background-color: #ffb800; color: black; padding: 10px 20px; border: none; cursor: pointer; margin: 10px; font-weight: bold; font-size: 16px; }
+    input, select { width: 300px; padding: 10px; margin: 10px auto; display: block; font-size: 16px; border-radius: 5px; border: none; }
+    .footer { text-align: center; padding: 20px; font-size: 14px; color: #bbb; }
+    a { color: #ffb800; text-decoration: none; }
+    #log { margin-top: 20px; color: lightgreen; font-weight: bold; }
+    .dashboard-section { margin-top: 30px; border-top: 1px solid #666; padding-top: 20px; }
   </style>
 </head>
 <body>
   <div class="nav">
-    <div id="nav-create" class="active" onclick="showSection('create')">
-      Create Discord Bot<br><small>Create a Discord bot on the developer portal.</small>
-    </div>
-    <div id="nav-token" onclick="showSection('token')">
-      Generate Token<br><small>Generate and copy the bot token.</small>
-    </div>
-    <div id="nav-connect" onclick="showSection('connect')">
-      Host Your Bot<br><small>Host your new bot with Ogbots.</small>
-    </div>
+    <div id="nav-create" class="active" onclick="showSection('create')">Create Bot</div>
+    <div id="nav-token" onclick="showSection('token')">Token</div>
+    <div id="nav-connect" onclick="showSection('connect')">Host Bot</div>
+    <div id="nav-dashboard" onclick="showSection('dashboard')">Dashboard</div>
   </div>
 
   <div id="create" class="section active">
     <h1>Welcome to Ogbots!</h1>
-    <p>Before you can start hosting, you need to create and connect a bot.</p>
     <button class="btn" onclick="showSection('token')">Get Started</button>
-    <br /><br />
-    <button class="btn" onclick="alert('Tutorial coming soon!')">Video tutorial</button>
   </div>
 
   <div id="token" class="section">
-    <h1>Copy Token</h1>
-    <p>
-      Generate and copy the bot token from the
-      <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer">Discord Developer Portal</a>.
-    </p>
-    <p>Click the Copy button to copy the token.</p>
+    <h1>Paste Your Token</h1>
     <input type="text" id="tokenField" placeholder="Paste your token here" />
     <button class="btn" onclick="copyToken()">Copy Token</button>
-    <br /><br />
     <button class="btn" onclick="showSection('connect')">Next Step</button>
   </div>
 
   <div id="connect" class="section">
     <h1>Connect Your Bot</h1>
-    <p>Paste your token from the Discord Developer Portal in the field below.</p>
     <input type="text" id="connectToken" placeholder="Bot Token" />
-    <br />
     <button class="btn" onclick="connectBot()">Connect Bot</button>
     <div id="log"></div>
-    <p>
-      By connecting, you agree to Ogbots' <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
-    </p>
-    <a href="https://inventor.gg" target="_blank" rel="noopener noreferrer">Need help setting up your bot?</a>
+  </div>
+
+  <div id="dashboard" class="section">
+    <h1>Bot Dashboard</h1>
+
+    <div class="dashboard-section">
+      <h2>Command Manager</h2>
+      <input type="text" id="commandInput" placeholder="!example" />
+      <button class="btn" onclick="addCommand()">Add Command</button>
+      <ul id="commandList" style="list-style: none; padding: 0;"></ul>
+    </div>
+
+    <div class="dashboard-section">
+      <h2>View Logs</h2>
+      <button class="btn" onclick="showLogs()">Show Logs</button>
+      <div id="logOutput" style="white-space: pre-wrap; margin-top: 10px;"></div>
+    </div>
+
+    <div class="dashboard-section">
+      <h2>Bot Settings</h2>
+      <label>Command Prefix:</label>
+      <input type="text" id="prefixSetting" />
+      <label>Example Setting:</label>
+      <select id="exampleSetting">
+        <option value="on">On</option>
+        <option value="off">Off</option>
+      </select>
+      <button class="btn" onclick="saveSettings()">Save Settings</button>
+      <div id="settingsSaved" style="color: lightgreen; margin-top: 10px;"></div>
+    </div>
   </div>
 
   <div class="footer">
@@ -122,24 +82,17 @@
 
   <script>
     function showSection(sectionId) {
-      const sections = document.querySelectorAll('.section');
-      sections.forEach(s => s.classList.remove('active'));
-
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.getElementById(sectionId).classList.add('active');
-
-      // update nav active state
-      document.querySelectorAll('.nav div').forEach(navItem => {
-        navItem.classList.remove('active');
-      });
+      document.querySelectorAll('.nav div').forEach(nav => nav.classList.remove('active'));
       document.getElementById('nav-' + sectionId).classList.add('active');
     }
 
     function copyToken() {
       const tokenField = document.getElementById('tokenField');
       tokenField.select();
-      tokenField.setSelectionRange(0, 99999); // For mobile
       document.execCommand('copy');
-      alert('Token copied to clipboard!');
+      alert('Token copied!');
     }
 
     async function connectBot() {
@@ -147,34 +100,85 @@
       const log = document.getElementById('log');
 
       if (!token) {
-        log.style.color = 'red';
         log.textContent = '❌ Please enter your bot token.';
+        log.style.color = 'red';
         return;
       }
 
-      log.style.color = 'white';
       log.textContent = '⏳ Starting bot...';
+      log.style.color = 'white';
 
       try {
-        const response = await fetch('/start-bot', {
+        const res = await fetch('/start-bot', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
+          body: JSON.stringify({ token })
         });
-        const text = await response.text();
-
-        if (response.ok) {
-          log.style.color = 'lightgreen';
-        } else {
-          log.style.color = 'red';
-        }
-
+        const text = await res.text();
+        log.style.color = res.ok ? 'lightgreen' : 'red';
         log.textContent = text;
-      } catch (error) {
+
+        if (res.ok) {
+          await loadDashboardData();
+          showSection('dashboard');
+        }
+      } catch (err) {
+        log.textContent = '❌ Server error. Try again.';
         log.style.color = 'red';
-        log.textContent = '❌ Server error. Please try again.';
-        console.error(error);
       }
+    }
+
+    async function addCommand() {
+      const cmd = document.getElementById('commandInput').value.trim();
+      if (!cmd) return;
+      await fetch('/api/commands', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: cmd })
+      });
+      document.getElementById('commandInput').value = '';
+      await loadCommands();
+    }
+
+    async function loadCommands() {
+      const res = await fetch('/api/commands');
+      const cmds = await res.json();
+      const list = document.getElementById('commandList');
+      list.innerHTML = '';
+      cmds.forEach(cmd => {
+        const li = document.createElement('li');
+        li.textContent = cmd.command;
+        list.appendChild(li);
+      });
+    }
+
+    async function showLogs() {
+      const res = await fetch('/api/logs');
+      const logs = await res.json();
+      document.getElementById('logOutput').textContent =
+        logs.map(log => `📝 ${log.message} (${log.timestamp})`).join('\n');
+    }
+
+    async function loadSettings() {
+      const res = await fetch('/api/settings');
+      const s = await res.json();
+      document.getElementById('prefixSetting').value = s.prefix;
+      document.getElementById('exampleSetting').value = s.example_setting;
+    }
+
+    async function saveSettings() {
+      const prefix = document.getElementById('prefixSetting').value;
+      const exampleSetting = document.getElementById('exampleSetting').value;
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prefix, exampleSetting })
+      });
+      document.getElementById('settingsSaved').textContent = '✅ Settings saved';
+    }
+
+    async function loadDashboardData() {
+      await Promise.all([loadCommands(), loadSettings()]);
     }
   </script>
 </body>
