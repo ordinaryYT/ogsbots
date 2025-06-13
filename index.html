@@ -1,140 +1,87 @@
+<!-- Save as: index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Ogbots - Discord Bot Hosting</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            background-color: #1a1d29;
-            color: white;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        .nav {
-            display: flex;
-            justify-content: space-around;
-            padding: 15px;
-            border-bottom: 1px solid #fff;
-            background-color: #12141c;
-        }
-        .nav div {
-            cursor: pointer;
-            text-align: center;
-            padding: 10px;
-            transition: background 0.3s;
-        }
-        .nav div:hover {
-            background-color: #292c3f;
-        }
-        .section {
-            display: none;
-            padding: 50px;
-            text-align: center;
-        }
-        .active {
-            display: block;
-        }
-        .btn {
-            background-color: #ffb800;
-            color: black;
-            padding: 10px 20px;
-            border: none;
-            cursor: pointer;
-            margin: 10px;
-            border-radius: 5px;
-            font-weight: bold;
-        }
-        input {
-            width: 300px;
-            padding: 10px;
-            margin: 10px;
-            border-radius: 5px;
-            border: none;
-        }
-        .footer {
-            text-align: center;
-            padding: 20px;
-            border-top: 1px solid #444;
-            margin-top: 40px;
-        }
-        a {
-            color: #ffb800;
-            text-decoration: none;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Ogbots</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { background-color: #1a1d29; color: white; font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .nav { display: flex; justify-content: space-around; padding: 15px; border-bottom: 1px solid #fff; background-color: #12141c; }
+    .nav div { cursor: pointer; text-align: center; padding: 10px; transition: background 0.3s; }
+    .nav div:hover { background-color: #292c3f; }
+    .section { display: none; padding: 50px; text-align: center; }
+    .active { display: block; }
+    .btn { background-color: #ffb800; color: black; padding: 10px 20px; border: none; cursor: pointer; margin: 10px; border-radius: 5px; font-weight: bold; }
+    input { width: 300px; padding: 10px; margin: 10px; border-radius: 5px; border: none; }
+    .footer { text-align: center; padding: 20px; border-top: 1px solid #444; margin-top: 40px; }
+    a { color: #ffb800; text-decoration: none; }
+  </style>
 </head>
 <body>
+  <div class="nav">
+    <div onclick="showSection('create')">Create Bot</div>
+    <div onclick="showSection('token')">Add Token</div>
+    <div onclick="showSection('dashboard')">Dashboard</div>
+  </div>
 
-    <div class="nav">
-        <div onclick="showSection('create')">Create Bot</div>
-        <div onclick="showSection('token')">Add Token</div>
-        <div onclick="showSection('dashboard')">Dashboard</div>
-    </div>
+  <div id="create" class="section active">
+    <h1>Welcome to Ogbots!</h1>
+    <p>Create your bot in the <a href="https://discord.com/developers/applications" target="_blank">Discord Developer Portal</a>.</p>
+    <button class="btn" onclick="showSection('token')">Next: Add Token</button>
+  </div>
 
-    <div id="create" class="section active">
-        <h1>Welcome to Ogbots!</h1>
-        <p>Create your bot in the <a href="https://discord.com/developers/applications" target="_blank">Discord Developer Portal</a> first.</p>
-        <button class="btn" onclick="showSection('token')">Next: Add Token</button>
-    </div>
+  <div id="token" class="section">
+    <h1>Paste Your Bot Token</h1>
+    <input type="text" id="botTokenInput" placeholder="Paste your bot token here">
+    <br>
+    <button class="btn" onclick="connectBot()">Connect & Start Bot</button>
+  </div>
 
-    <div id="token" class="section">
-        <h1>Paste Your Bot Token</h1>
-        <input type="text" id="botTokenInput" placeholder="Paste your bot token here">
-        <br>
-        <button class="btn" onclick="connectBot()">Connect & Start Bot</button>
-        <p>Your bot must have the "MESSAGE CONTENT INTENT" enabled on the portal.</p>
-    </div>
+  <div id="dashboard" class="section">
+    <h1>Bot Dashboard</h1>
+    <input type="text" id="prefixInput" placeholder="Command Prefix (e.g. !)">
+    <input type="text" id="commandInput" placeholder="Sample Command (e.g. ping)">
+    <br>
+    <button class="btn" onclick="saveSettings()">Save Settings</button>
+  </div>
 
-    <div id="dashboard" class="section">
-        <h1>Bot Dashboard</h1>
-        <p>Set your bot's prefix and default command:</p>
-        <input type="text" id="prefixInput" placeholder="Command Prefix (e.g. !)">
-        <br>
-        <input type="text" id="commandInput" placeholder="Sample command name (e.g. ping)">
-        <br>
-        <button class="btn" onclick="saveSettings()">Save Settings</button>
-    </div>
+  <div class="footer">
+    You're signed in as @ordinarygamerlyt | <a href="#">Logout</a>
+  </div>
 
-    <div class="footer">
-        You're signed in as @ordinarygamerlyt | <a href="#">Logout</a>
-    </div>
+  <script>
+    function showSection(sectionId) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(sectionId).classList.add('active');
+    }
 
-    <script>
-        function showSection(sectionId) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById(sectionId).classList.add('active');
-        }
+    function connectBot() {
+      const token = document.getElementById('botTokenInput').value.trim();
+      if (!token) return alert('Please enter a bot token.');
 
-        function connectBot() {
-            const token = document.getElementById('botTokenInput').value.trim();
-            if (!token) return alert('Please enter your bot token.');
+      fetch('/start-bot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      }).then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            alert('Bot connected!');
+            showSection('dashboard');
+          } else {
+            alert('Error: ' + data.message);
+          }
+        }).catch(() => {
+          alert('Server error.');
+        });
+    }
 
-            fetch('https://YOUR-RENDER-URL/start-bot', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token })
-            }).then(res => res.json())
-              .then(data => {
-                  if (data.success) {
-                      alert('Bot connected!');
-                      showSection('dashboard');
-                  } else {
-                      alert('Error: ' + data.message);
-                  }
-              }).catch(err => {
-                  alert('Server error.');
-                  console.error(err);
-              });
-        }
-
-        function saveSettings() {
-            const prefix = document.getElementById('prefixInput').value.trim();
-            const command = document.getElementById('commandInput').value.trim();
-            alert(`Saved!\nPrefix: ${prefix}\nCommand: ${command}`);
-            // Extend this to send to server for persistent storage
-        }
-    </script>
+    function saveSettings() {
+      const prefix = document.getElementById('prefixInput').value;
+      const command = document.getElementById('commandInput').value;
+      alert(`Saved!\nPrefix: ${prefix}\nCommand: ${command}`);
+    }
+  </script>
 </body>
 </html>
