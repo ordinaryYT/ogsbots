@@ -1,77 +1,48 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Ogbots</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>Ogbots - Start Your Discord Bot</title>
   <style>
-    body { background-color: #1a1d29; color: white; font-family: Arial, sans-serif; margin: 0; padding: 0; }
-    .nav { display: flex; justify-content: space-around; padding: 15px; border-bottom: 1px solid #fff; background-color: #12141c; }
-    .nav div { cursor: pointer; text-align: center; padding: 10px; transition: background 0.3s; }
-    .nav div:hover { background-color: #292c3f; }
-    .section { display: none; padding: 50px; text-align: center; }
-    .active { display: block; }
-    .btn { background-color: #ffb800; color: black; padding: 10px 20px; border: none; cursor: pointer; margin: 10px; border-radius: 5px; font-weight: bold; }
-    input { width: 300px; padding: 10px; margin: 10px; border-radius: 5px; border: none; }
-    .footer { text-align: center; padding: 20px; border-top: 1px solid #444; margin-top: 40px; }
-    a { color: #ffb800; text-decoration: none; }
+    body { background-color: #1a1d29; color: white; font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+    input, button { padding: 10px; margin: 10px; width: 300px; }
+    button { background: #ffb800; color: black; border: none; cursor: pointer; }
+    .log { margin-top: 20px; color: #0f0; }
   </style>
 </head>
 <body>
-  <div class="nav">
-    <div onclick="showSection('create')">Create Bot</div>
-    <div onclick="showSection('token')">Add Token</div>
-    <div onclick="showSection('dashboard')">Dashboard</div>
-  </div>
-
-  <div id="create" class="section active">
-    <h1>Welcome to Ogbots!</h1>
-    <p>Create your bot in the <a href="https://discord.com/developers/applications" target="_blank">Discord Developer Portal</a>.</p>
-    <button class="btn" onclick="showSection('token')">Next: Add Token</button>
-  </div>
-
-  <div id="token" class="section">
-    <h1>Paste Your Bot Token</h1>
-    <input type="text" id="botTokenInput" placeholder="Paste your bot token here">
-    <br>
-    <button class="btn" onclick="connectBot()">Connect & Start Bot</button>
-  </div>
-
-  <div id="dashboard" class="section">
-    <h1>Bot Dashboard</h1>
-    <p>Your bot is running. Use <code>!ping</code> in your server to test it.</p>
-  </div>
-
-  <div class="footer">
-    You're signed in as @ordinarygamerlyt | <a href="#">Logout</a>
-  </div>
+  <h1>Ogbots</h1>
+  <p>Paste your Discord bot token below:</p>
+  <input type="text" id="tokenInput" placeholder="Enter bot token">
+  <br>
+  <button onclick="startBot()">Connect & Start Bot</button>
+  <div class="log" id="log"></div>
 
   <script>
-    function showSection(sectionId) {
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-      document.getElementById(sectionId).classList.add('active');
-    }
+    async function startBot() {
+      const token = document.getElementById('tokenInput').value;
+      const log = document.getElementById('log');
 
-    function connectBot() {
-      const token = document.getElementById('botTokenInput').value.trim();
-      if (!token) return alert('Please enter a bot token.');
+      if (!token) {
+        log.textContent = '❌ Please enter a bot token.';
+        return;
+      }
 
-      fetch('/start-bot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token })
-      }).then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            alert('Bot connected!');
-            showSection('dashboard');
-          } else {
-            alert('Error: ' + data.message);
-          }
-        }).catch(() => {
-          alert('Server error.');
+      log.textContent = '🔄 Starting bot...';
+
+      try {
+        const res = await fetch('/start-bot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
         });
+
+        const text = await res.text();
+        log.textContent = text;
+      } catch (err) {
+        log.textContent = '❌ Failed to connect to backend.';
+        console.error(err);
+      }
     }
   </script>
 </body>
