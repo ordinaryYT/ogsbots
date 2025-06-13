@@ -12,11 +12,10 @@
     .section { display: none; text-align: center; padding: 50px; }
     .active { display: block; }
     .btn { background-color: #ffb800; color: black; padding: 10px 20px; border: none; cursor: pointer; margin: 10px; font-weight: bold; font-size: 16px; }
-    input, select { width: 300px; padding: 10px; margin: 10px auto; display: block; font-size: 16px; border-radius: 5px; border: none; }
+    .card { background: #2a2d3f; padding: 20px; margin: 10px auto; width: 90%; max-width: 400px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.3); text-align: left; }
     .footer { text-align: center; padding: 20px; font-size: 14px; color: #bbb; }
     a { color: #ffb800; text-decoration: none; }
-    #log { margin-top: 20px; color: lightgreen; font-weight: bold; }
-    .dashboard-section { margin-top: 30px; border-top: 1px solid #666; padding-top: 20px; }
+    h2 { margin-top: 0; }
   </style>
 </head>
 <body>
@@ -47,32 +46,31 @@
   </div>
 
   <div id="dashboard" class="section">
-    <h1>Bot Dashboard</h1>
+    <h1>Bot Command Dashboard</h1>
+    <p>Select commands to enable on your bot:</p>
 
-    <div class="dashboard-section">
-      <h2>Command Manager</h2>
-      <input type="text" id="commandInput" placeholder="!example" />
-      <button class="btn" onclick="addCommand()">Add Command</button>
-      <ul id="commandList" style="list-style: none; padding: 0;"></ul>
+    <div class="card">
+      <h2>Ping Command</h2>
+      <p>Replies with "Pong!" when users type <code>!ping</code>.</p>
+      <button class="btn" onclick="enableCommand('ping')">Enable</button>
     </div>
 
-    <div class="dashboard-section">
-      <h2>View Logs</h2>
-      <button class="btn" onclick="showLogs()">Show Logs</button>
-      <div id="logOutput" style="white-space: pre-wrap; margin-top: 10px;"></div>
+    <div class="card">
+      <h2>Say Command</h2>
+      <p>Repeats whatever message the user sends. Example: <code>!say Hello</code>.</p>
+      <button class="btn" onclick="enableCommand('say')">Enable</button>
     </div>
 
-    <div class="dashboard-section">
-      <h2>Bot Settings</h2>
-      <label>Command Prefix:</label>
-      <input type="text" id="prefixSetting" />
-      <label>Example Setting:</label>
-      <select id="exampleSetting">
-        <option value="on">On</option>
-        <option value="off">Off</option>
-      </select>
-      <button class="btn" onclick="saveSettings()">Save Settings</button>
-      <div id="settingsSaved" style="color: lightgreen; margin-top: 10px;"></div>
+    <div class="card">
+      <h2>Uptime Command</h2>
+      <p>Returns how long the bot has been running. Example: <code>!uptime</code>.</p>
+      <button class="btn" onclick="enableCommand('uptime')">Enable</button>
+    </div>
+
+    <div class="card">
+      <h2>Help Command</h2>
+      <p>Lists available commands to the user.</p>
+      <button class="btn" onclick="enableCommand('help')">Enable</button>
     </div>
   </div>
 
@@ -119,7 +117,6 @@
         log.textContent = text;
 
         if (res.ok) {
-          await loadDashboardData();
           showSection('dashboard');
         }
       } catch (err) {
@@ -128,57 +125,9 @@
       }
     }
 
-    async function addCommand() {
-      const cmd = document.getElementById('commandInput').value.trim();
-      if (!cmd) return;
-      await fetch('/api/commands', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command: cmd })
-      });
-      document.getElementById('commandInput').value = '';
-      await loadCommands();
-    }
-
-    async function loadCommands() {
-      const res = await fetch('/api/commands');
-      const cmds = await res.json();
-      const list = document.getElementById('commandList');
-      list.innerHTML = '';
-      cmds.forEach(cmd => {
-        const li = document.createElement('li');
-        li.textContent = cmd.command;
-        list.appendChild(li);
-      });
-    }
-
-    async function showLogs() {
-      const res = await fetch('/api/logs');
-      const logs = await res.json();
-      document.getElementById('logOutput').textContent =
-        logs.map(log => `📝 ${log.message} (${log.timestamp})`).join('\n');
-    }
-
-    async function loadSettings() {
-      const res = await fetch('/api/settings');
-      const s = await res.json();
-      document.getElementById('prefixSetting').value = s.prefix;
-      document.getElementById('exampleSetting').value = s.example_setting;
-    }
-
-    async function saveSettings() {
-      const prefix = document.getElementById('prefixSetting').value;
-      const exampleSetting = document.getElementById('exampleSetting').value;
-      await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prefix, exampleSetting })
-      });
-      document.getElementById('settingsSaved').textContent = '✅ Settings saved';
-    }
-
-    async function loadDashboardData() {
-      await Promise.all([loadCommands(), loadSettings()]);
+    function enableCommand(cmd) {
+      alert(`✅ '${cmd}' command enabled (simulated)`);
+      // Here you could POST to /api/commands if you want to store it in DB
     }
   </script>
 </body>
