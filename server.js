@@ -1,12 +1,17 @@
 const express = require('express');
-const { Client, GatewayIntentBits, Partials } = require('discord.js');
+const fs = require('fs');
 const path = require('path');
+const { Client, GatewayIntentBits, Partials } = require('discord.js');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(express.static('public'));
 app.use(express.json());
+
+// ✅ Serve index.html from root
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 let botClient = null;
 
@@ -16,10 +21,7 @@ app.post('/start-bot', async (req, res) => {
   if (!token) return res.status(400).send('Token required.');
 
   try {
-    // If a bot is already running, destroy it
-    if (botClient) {
-      await botClient.destroy();
-    }
+    if (botClient) await botClient.destroy();
 
     botClient = new Client({
       intents: [
