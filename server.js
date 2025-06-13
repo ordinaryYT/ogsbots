@@ -1,4 +1,4 @@
-// Save as: server.js
+// server.js
 const express = require('express');
 const path = require('path');
 const { Client, GatewayIntentBits } = require('discord.js');
@@ -10,13 +10,13 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(__dirname)); // Serve index.html and static files
+app.use(express.static(__dirname)); // Serves index.html
 
-const bots = {};
+const activeBots = {};
 
 app.post('/start-bot', async (req, res) => {
   const { token } = req.body;
-  if (!token) return res.status(400).json({ success: false, message: 'No token provided.' });
+  if (!token) return res.status(400).json({ success: false, message: 'Token is required.' });
 
   try {
     const client = new Client({
@@ -24,11 +24,11 @@ app.post('/start-bot', async (req, res) => {
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-      ]
+      ],
     });
 
     client.once('ready', () => {
-      console.log(`Bot ready as ${client.user.tag}`);
+      console.log(`✅ Bot ready: ${client.user.tag}`);
     });
 
     client.on('messageCreate', msg => {
@@ -38,19 +38,20 @@ app.post('/start-bot', async (req, res) => {
     });
 
     await client.login(token);
-    bots[token] = client;
+    activeBots[token] = client;
 
-    return res.json({ success: true, message: 'Bot connected.' });
+    res.json({ success: true, message: 'Bot connected.' });
   } catch (err) {
-    console.error('Bot login failed:', err.message);
-    return res.status(401).json({ success: false, message: 'Invalid token or login error.' });
+    console.error('❌ Bot failed:', err);
+    res.status(401).json({ success: false, message: 'Invalid token or error logging in.' });
   }
 });
 
+// Catch-all: serve index.html for all routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {
-  console.log(`App running on port ${PORT}`);
+  console.log(`🚀 Server listening on port ${PORT}`);
 });
