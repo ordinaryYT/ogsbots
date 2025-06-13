@@ -1,57 +1,54 @@
-// server.js
 const express = require('express');
+const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const path = require('path');
-const { Client, GatewayIntentBits } = require('discord.js');
-const cors = require('cors');
-const bodyParser = require('body-parser');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
-app.use(cors());
-app.use(bodyParser.json());
-app.use(express.static(__dirname)); // Serves index.html
+app.use(express.static('public'));
+app.use(express.json());
 
-const activeBots = {};
+let botClient = null;
 
 app.post('/start-bot', async (req, res) => {
   const { token } = req.body;
-  if (!token) return res.status(400).json({ success: false, message: 'Token is required.' });
+
+  if (!token) return res.status(400).send('Token required.');
 
   try {
-    const client = new Client({
+    // If a bot is already running, destroy it
+    if (botClient) {
+      await botClient.destroy();
+    }
+
+    botClient = new Client({
       intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
       ],
+      partials: [Partials.Channel],
     });
 
-    client.once('ready', () => {
-      console.log(`✅ Bot ready: ${client.user.tag}`);
+    botClient.once('ready', () => {
+      console.log(`✅ Bot ready: ${botClient.user.tag}`);
     });
 
-    client.on('messageCreate', msg => {
-      if (msg.content === '!ping') {
+    botClient.on('messageCreate', msg => {
+      if (msg.author.bot) return;
+      if (msg.content.toLowerCase() === '!ping') {
         msg.reply('Pong!');
       }
     });
 
-    await client.login(token);
-    activeBots[token] = client;
-
-    res.json({ success: true, message: 'Bot connected.' });
+    await botClient.login(token);
+    res.send('✅ Bot started');
   } catch (err) {
     console.error('❌ Bot failed:', err);
-    res.status(401).json({ success: false, message: 'Invalid token or error logging in.' });
+    res.status(500).send('❌ Invalid token or bot error');
   }
 });
 
-// Catch-all: serve index.html for all routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server listening on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`🌐 Server running at http://localhost:${port}`);
 });
