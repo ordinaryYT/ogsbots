@@ -15,19 +15,18 @@ const pool = new Pool({
 app.use(express.json());
 app.use(express.static(__dirname));
 
-const botClients = new Map(); // token => client
+const botClients = new Map(); // token => Discord client
+const enabledCommands = new Map(); // token => Set of enabled commands
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Start a new bot
 app.post('/start-bot', async (req, res) => {
   const { token } = req.body;
   if (!token) return res.status(400).send('Token required.');
 
   if (botClients.has(token)) return res.status(200).send('✅ Bot already running');
-
   if (botClients.size >= 3) return res.status(403).send('❌ Bot limit (3) reached.');
 
   try {
@@ -47,14 +46,31 @@ app.post('/start-bot', async (req, res) => {
 
     client.on('messageCreate', async msg => {
       if (msg.author.bot) return;
-      if (msg.content.toLowerCase() === '!ping') {
-        await msg.reply('Pong!');
-        await saveLog(`User ${msg.author.tag} used !ping`);
+      const allowed = enabledCommands.get(token) || new Set();
+      const content = msg.content.toLowerCase();
+
+      if (content === '!ping' && allowed.has('ping')) {
+        return msg.reply('Pong!');
+      }
+
+      if (content.startsWith('!say') && allowed.has('say')) {
+        const message = msg.content.slice(5).trim();
+        if (message) msg.channel.send(message);
+      }
+
+      if (content === '!uptime' && allowed.has('uptime')) {
+        const uptime = process.uptime();
+        msg.channel.send(`🕒 Bot uptime: ${Math.floor(uptime)}s`);
+      }
+
+      if (content === '!help' && allowed.has('help')) {
+        msg.channel.send(`Available commands: ${Array.from(allowed).map(c => `!${c}`).join(', ')}`);
       }
     });
 
     await client.login(token);
     botClients.set(token, client);
+    enabledCommands.set(token, new Set());
 
     res.send('✅ Bot started');
   } catch (err) {
@@ -63,7 +79,17 @@ app.post('/start-bot', async (req, res) => {
   }
 });
 
-// Stop a running bot
+app.post('/enable-command', (req, res) => {
+  const { token, command } = req.body;
+  if (!token || !command) return res.status(400).send('Token and command are required');
+  if (!botClients.has(token)) return res.status(404).send('❌ Bot not running');
+
+  if (!enabledCommands.has(token)) enabledCommands.set(token, new Set());
+  enabledCommands.get(token).add(command);
+
+  res.send(`✅ '${command}' enabled`);
+});
+
 app.post('/stop-bot', async (req, res) => {
   const { token } = req.body;
   const client = botClients.get(token);
@@ -73,6 +99,7 @@ app.post('/stop-bot', async (req, res) => {
   try {
     await client.destroy();
     botClients.delete(token);
+    enabledCommands.delete(token);
     res.send('🛑 Bot stopped');
   } catch (err) {
     console.error('Failed to stop bot:', err);
@@ -80,7 +107,6 @@ app.post('/stop-bot', async (req, res) => {
   }
 });
 
-// Command API
 app.get('/api/commands', async (req, res) => {
   const { rows } = await pool.query('SELECT * FROM commands ORDER BY id DESC');
   res.json(rows);
@@ -93,7 +119,6 @@ app.post('/api/commands', async (req, res) => {
   res.send('✅ Command saved');
 });
 
-// Settings API
 app.get('/api/settings', async (req, res) => {
   const { rows } = await pool.query('SELECT * FROM settings LIMIT 1');
   res.json(rows[0]);
@@ -105,7 +130,6 @@ app.post('/api/settings', async (req, res) => {
   res.send('✅ Settings updated');
 });
 
-// Logs API
 app.get('/api/logs', async (req, res) => {
   const { rows } = await pool.query('SELECT * FROM logs ORDER BY timestamp DESC LIMIT 20');
   res.json(rows);
@@ -115,7 +139,6 @@ async function saveLog(message) {
   await pool.query('INSERT INTO logs (message) VALUES ($1)', [message]);
 }
 
-// Ensure required tables exist
 async function createTablesIfNotExist() {
   try {
     await pool.query(`
