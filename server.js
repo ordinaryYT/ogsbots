@@ -15,30 +15,39 @@ const pool = new Pool({
 app.use(express.json());
 app.use(express.static(__dirname));
 
-let botClient = null;
+const botClients = new Map(); // token => client
+const userBots = new Map();   // userId => [tokens]
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Start a new bot
 app.post('/start-bot', async (req, res) => {
-  const { token } = req.body;
-  if (!token) return res.status(400).send('Token required.');
+  const { token, userId } = req.body;
+  if (!token || !userId) return res.status(400).send('Token and userId required.');
+
+  if (botClients.has(token)) return res.status(200).send('✅ Bot already running');
+
+  const userTokens = userBots.get(userId) || [];
+  if (userTokens.length >= 3) return res.status(403).send('❌ Bot limit (3) reached for this user.');
 
   try {
-    if (botClient) await botClient.destroy();
-
-    botClient = new Client({
-      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+    const client = new Client({
+      intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
+      ],
       partials: [Partials.Channel],
     });
 
-    botClient.once('ready', () => {
-      console.log(`✅ Bot ready: ${botClient.user.tag}`);
-      saveLog(`Bot started as ${botClient.user.tag}`);
+    client.once('ready', () => {
+      console.log(`✅ Bot ready: ${client.user.tag}`);
+      saveLog(`Bot started as ${client.user.tag}`);
     });
 
-    botClient.on('messageCreate', async msg => {
+    client.on('messageCreate', async msg => {
       if (msg.author.bot) return;
       if (msg.content.toLowerCase() === '!ping') {
         await msg.reply('Pong!');
@@ -46,7 +55,10 @@ app.post('/start-bot', async (req, res) => {
       }
     });
 
-    await botClient.login(token);
+    await client.login(token);
+    botClients.set(token, client);
+    userBots.set(userId, [...userTokens, token]);
+
     res.send('✅ Bot started');
   } catch (err) {
     console.error('❌ Bot failed:', err);
@@ -54,7 +66,28 @@ app.post('/start-bot', async (req, res) => {
   }
 });
 
-// === COMMANDS ===
+// Stop a running bot
+app.post('/stop-bot', async (req, res) => {
+  const { token, userId } = req.body;
+  const client = botClients.get(token);
+
+  if (!client) return res.status(404).send('❌ Bot not found');
+
+  try {
+    await client.destroy();
+    botClients.delete(token);
+
+    const tokens = (userBots.get(userId) || []).filter(t => t !== token);
+    userBots.set(userId, tokens);
+
+    res.send('🛑 Bot stopped');
+  } catch (err) {
+    console.error('Failed to stop bot:', err);
+    res.status(500).send('❌ Error stopping bot');
+  }
+});
+
+// Command API
 app.get('/api/commands', async (req, res) => {
   const { rows } = await pool.query('SELECT * FROM commands ORDER BY id DESC');
   res.json(rows);
@@ -67,7 +100,7 @@ app.post('/api/commands', async (req, res) => {
   res.send('✅ Command saved');
 });
 
-// === SETTINGS ===
+// Settings API
 app.get('/api/settings', async (req, res) => {
   const { rows } = await pool.query('SELECT * FROM settings LIMIT 1');
   res.json(rows[0]);
@@ -79,7 +112,7 @@ app.post('/api/settings', async (req, res) => {
   res.send('✅ Settings updated');
 });
 
-// === LOGS ===
+// Logs API
 app.get('/api/logs', async (req, res) => {
   const { rows } = await pool.query('SELECT * FROM logs ORDER BY timestamp DESC LIMIT 20');
   res.json(rows);
@@ -89,7 +122,7 @@ async function saveLog(message) {
   await pool.query('INSERT INTO logs (message) VALUES ($1)', [message]);
 }
 
-// === Ensure tables exist ===
+// Ensure required tables exist
 async function createTablesIfNotExist() {
   try {
     await pool.query(`
