@@ -16,7 +16,6 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 const botClients = new Map(); // token => client
-const userBots = new Map();   // userId => [tokens]
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
@@ -24,13 +23,12 @@ app.get('/', (req, res) => {
 
 // Start a new bot
 app.post('/start-bot', async (req, res) => {
-  const { token, userId } = req.body;
-  if (!token || !userId) return res.status(400).send('Token and userId required.');
+  const { token } = req.body;
+  if (!token) return res.status(400).send('Token required.');
 
   if (botClients.has(token)) return res.status(200).send('✅ Bot already running');
 
-  const userTokens = userBots.get(userId) || [];
-  if (userTokens.length >= 3) return res.status(403).send('❌ Bot limit (3) reached for this user.');
+  if (botClients.size >= 3) return res.status(403).send('❌ Bot limit (3) reached.');
 
   try {
     const client = new Client({
@@ -57,7 +55,6 @@ app.post('/start-bot', async (req, res) => {
 
     await client.login(token);
     botClients.set(token, client);
-    userBots.set(userId, [...userTokens, token]);
 
     res.send('✅ Bot started');
   } catch (err) {
@@ -68,7 +65,7 @@ app.post('/start-bot', async (req, res) => {
 
 // Stop a running bot
 app.post('/stop-bot', async (req, res) => {
-  const { token, userId } = req.body;
+  const { token } = req.body;
   const client = botClients.get(token);
 
   if (!client) return res.status(404).send('❌ Bot not found');
@@ -76,10 +73,6 @@ app.post('/stop-bot', async (req, res) => {
   try {
     await client.destroy();
     botClients.delete(token);
-
-    const tokens = (userBots.get(userId) || []).filter(t => t !== token);
-    userBots.set(userId, tokens);
-
     res.send('🛑 Bot stopped');
   } catch (err) {
     console.error('Failed to stop bot:', err);
