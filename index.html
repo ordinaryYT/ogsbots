@@ -1,47 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Ogbots - Start Your Discord Bot</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ogbots</title>
   <style>
-    body { background-color: #1a1d29; color: white; font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-    input, button { padding: 10px; margin: 10px; width: 300px; }
-    button { background: #ffb800; color: black; border: none; cursor: pointer; }
-    .log { margin-top: 20px; color: #0f0; }
+    body {
+      background-color: #1a1d29;
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 0;
+    }
+    .nav {
+      display: flex;
+      justify-content: space-around;
+      padding: 10px;
+      border-bottom: 1px solid #fff;
+      cursor: pointer;
+    }
+    .nav div:hover {
+      background-color: #333;
+    }
+    .nav div.active {
+      border-bottom: 3px solid #ffb800;
+      font-weight: bold;
+    }
+    .section {
+      display: none;
+      text-align: center;
+      padding: 50px;
+    }
+    .active {
+      display: block;
+    }
+    .btn {
+      background-color: #ffb800;
+      color: black;
+      padding: 10px 20px;
+      border: none;
+      cursor: pointer;
+      margin: 10px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    input {
+      width: 300px;
+      padding: 10px;
+      margin: 10px auto;
+      display: block;
+      font-size: 16px;
+      border-radius: 5px;
+      border: none;
+    }
+    .footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 14px;
+      color: #bbb;
+    }
+    a {
+      color: #ffb800;
+      text-decoration: none;
+    }
+    #log {
+      margin-top: 20px;
+      color: lightgreen;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <h1>Ogbots</h1>
-  <p>Paste your Discord bot token below:</p>
-  <input type="text" id="tokenInput" placeholder="Enter bot token">
-  <br>
-  <button onclick="startBot()">Connect & Start Bot</button>
-  <div class="log" id="log"></div>
+  <div class="nav">
+    <div id="nav-create" class="active" onclick="showSection('create')">
+      Create Discord Bot<br><small>Create a Discord bot on the developer portal.</small>
+    </div>
+    <div id="nav-token" onclick="showSection('token')">
+      Generate Token<br><small>Generate and copy the bot token.</small>
+    </div>
+    <div id="nav-connect" onclick="showSection('connect')">
+      Host Your Bot<br><small>Host your new bot with Ogbots.</small>
+    </div>
+  </div>
+
+  <div id="create" class="section active">
+    <h1>Welcome to Ogbots!</h1>
+    <p>Before you can start hosting, you need to create and connect a bot.</p>
+    <button class="btn" onclick="showSection('token')">Get Started</button>
+    <br /><br />
+    <button class="btn" onclick="alert('Tutorial coming soon!')">Video tutorial</button>
+  </div>
+
+  <div id="token" class="section">
+    <h1>Copy Token</h1>
+    <p>
+      Generate and copy the bot token from the
+      <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer">Discord Developer Portal</a>.
+    </p>
+    <p>Click the Copy button to copy the token.</p>
+    <input type="text" id="tokenField" placeholder="Paste your token here" />
+    <button class="btn" onclick="copyToken()">Copy Token</button>
+    <br /><br />
+    <button class="btn" onclick="showSection('connect')">Next Step</button>
+  </div>
+
+  <div id="connect" class="section">
+    <h1>Connect Your Bot</h1>
+    <p>Paste your token from the Discord Developer Portal in the field below.</p>
+    <input type="text" id="connectToken" placeholder="Bot Token" />
+    <br />
+    <button class="btn" onclick="connectBot()">Connect Bot</button>
+    <div id="log"></div>
+    <p>
+      By connecting, you agree to Ogbots' <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+    </p>
+    <a href="https://inventor.gg" target="_blank" rel="noopener noreferrer">Need help setting up your bot?</a>
+  </div>
+
+  <div class="footer">
+    You're signed in as @ordinarygamerlyt <a href="#">Logout</a>
+  </div>
 
   <script>
-    async function startBot() {
-      const token = document.getElementById('tokenInput').value;
+    function showSection(sectionId) {
+      const sections = document.querySelectorAll('.section');
+      sections.forEach(s => s.classList.remove('active'));
+
+      document.getElementById(sectionId).classList.add('active');
+
+      // update nav active state
+      document.querySelectorAll('.nav div').forEach(navItem => {
+        navItem.classList.remove('active');
+      });
+      document.getElementById('nav-' + sectionId).classList.add('active');
+    }
+
+    function copyToken() {
+      const tokenField = document.getElementById('tokenField');
+      tokenField.select();
+      tokenField.setSelectionRange(0, 99999); // For mobile
+      document.execCommand('copy');
+      alert('Token copied to clipboard!');
+    }
+
+    async function connectBot() {
+      const token = document.getElementById('connectToken').value.trim();
       const log = document.getElementById('log');
 
       if (!token) {
-        log.textContent = '❌ Please enter a bot token.';
+        log.style.color = 'red';
+        log.textContent = '❌ Please enter your bot token.';
         return;
       }
 
-      log.textContent = '🔄 Starting bot...';
+      log.style.color = 'white';
+      log.textContent = '⏳ Starting bot...';
 
       try {
-        const res = await fetch('/start-bot', {
+        const response = await fetch('/start-bot', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token }),
         });
+        const text = await response.text();
 
-        const text = await res.text();
+        if (response.ok) {
+          log.style.color = 'lightgreen';
+        } else {
+          log.style.color = 'red';
+        }
+
         log.textContent = text;
-      } catch (err) {
-        log.textContent = '❌ Failed to connect to backend.';
-        console.error(err);
+      } catch (error) {
+        log.style.color = 'red';
+        log.textContent = '❌ Server error. Please try again.';
+        console.error(error);
       }
     }
   </script>
