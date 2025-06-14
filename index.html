@@ -3,176 +3,93 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ogbots Trigger Dashboard</title>
+  <title>Ogbots Flow Builder</title>
   <style>
     body { background-color: #0e0f13; color: #fff; font-family: Arial, sans-serif; margin: 0; padding: 0; }
     h1, h2 { margin-left: 20px; }
-    .dashboard { padding: 20px; }
-    .section-header { font-size: 18px; font-weight: bold; margin: 30px 0 10px 20px; }
-    .trigger-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; padding: 0 20px; }
-    .trigger-card {
-      background: #1a1d29;
-      padding: 15px;
-      border-radius: 10px;
-      border: 1px solid #2a2d3f;
-      cursor: pointer;
-      transition: background 0.2s ease;
-    }
-    .trigger-card:hover {
-      background-color: #242836;
-    }
-    .trigger-card h3 { margin: 0; font-size: 16px; }
-    .trigger-card p { font-size: 13px; color: #ccc; margin-top: 5px; }
-    .options-list { margin-top: 10px; display: none; padding-left: 15px; }
-    .options-list li { font-size: 13px; padding: 3px 0; }
-    .search-box { margin: 20px; text-align: center; }
-    .search-box input {
-      padding: 10px;
-      width: 300px;
-      border-radius: 5px;
-      border: none;
-      font-size: 16px;
-    }
+    .dashboard { display: flex; flex-direction: row; height: 100vh; }
+    .sidebar { width: 300px; background: #1a1d29; padding: 20px; overflow-y: auto; }
+    .main-panel { flex: 1; background: #12141c; padding: 20px; overflow-y: auto; }
+    .trigger-card { background: #222533; padding: 15px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; border: 1px solid #2f3243; }
+    .trigger-card:hover { background-color: #2d3144; }
+    .trigger-card h3 { margin: 0 0 5px 0; font-size: 16px; }
+    .trigger-card p { font-size: 13px; color: #ccc; margin: 0; }
+    .action-panel { background: #1e212d; padding: 15px; border-radius: 10px; margin-top: 10px; }
+    label { display: block; margin: 10px 0 5px; font-size: 14px; }
+    select, input[type="text"] { width: 100%; padding: 8px; font-size: 14px; border-radius: 4px; border: none; background: #2b2e3e; color: white; }
+    .btn { margin-top: 15px; padding: 10px 20px; font-size: 14px; border: none; border-radius: 5px; background-color: #ffb800; color: black; font-weight: bold; cursor: pointer; }
+    .flow-output { background: #181a23; margin-top: 20px; padding: 10px; border-radius: 5px; white-space: pre-wrap; font-family: monospace; font-size: 12px; color: #aaa; }
   </style>
 </head>
 <body>
   <div class="dashboard">
-    <h1>Select Trigger</h1>
-    <p style="margin-left: 20px; color: #aaa">The trigger is the event that causes your bot flow to run.</p>
-
-    <div class="search-box">
-      <input type="text" placeholder="Search for triggers..." />
-    </div>
-
-    <div class="section-header">Discord Interactions</div>
-    <div class="trigger-grid">
-      <div class="trigger-card" onclick="toggleOptions(this)">
+    <div class="sidebar">
+      <h2>Triggers</h2>
+      <div class="trigger-card" onclick="selectTrigger('slash_command')">
         <h3>Slash Command</h3>
         <p>Triggered by a slash command</p>
-        <ul class="options-list">
-          <li>/hello - Greets the user</li>
-          <li>/ban - Ban a member</li>
-          <li>/kick - Kick a member</li>
-          <li>/info - Show server info</li>
-          <li>/help - Show help menu</li>
-        </ul>
       </div>
-      <div class="trigger-card" onclick="toggleOptions(this)">
-        <h3>Context Menu</h3>
-        <p>Triggered by a user/message context menu option</p>
-        <ul class="options-list">
-          <li>View Profile</li>
-          <li>Report Message</li>
-          <li>Mute User</li>
-          <li>Message Logs</li>
-          <li>Quick Ban</li>
-        </ul>
-      </div>
-      <div class="trigger-card" onclick="toggleOptions(this)">
-        <h3>Button Click</h3>
-        <p>Triggered by a button click below a message</p>
-        <ul class="options-list">
-          <li>Confirm Action</li>
-          <li>Cancel</li>
-          <li>Open Modal</li>
-          <li>React with Emoji</li>
-          <li>Join Giveaway</li>
-        </ul>
-      </div>
-      <div class="trigger-card" onclick="toggleOptions(this)">
-        <h3>Modal Submit</h3>
-        <p>Triggered by a form/modal submission</p>
-        <ul class="options-list">
-          <li>Feedback Form</li>
-          <li>Bug Report</li>
-          <li>Request Support</li>
-          <li>Apply for Role</li>
-          <li>Submit Suggestion</li>
-        </ul>
-      </div>
-      <div class="trigger-card" onclick="toggleOptions(this)">
-        <h3>Dropdown Select</h3>
-        <p>Triggered by a dropdown selection</p>
-        <ul class="options-list">
-          <li>Choose Category</li>
-          <li>Select Role</li>
-          <li>Set Status</li>
-          <li>Filter Results</li>
-          <li>Pick Language</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="section-header">Discord Messages</div>
-    <div class="trigger-grid">
-      <div class="trigger-card" onclick="toggleOptions(this)">
+      <div class="trigger-card" onclick="selectTrigger('message_sent')">
         <h3>Message Sent</h3>
-        <p>Triggered by a sent message</p>
-        <ul class="options-list">
-          <li>Auto-reply</li>
-          <li>Log message</li>
-          <li>Check for spam</li>
-          <li>Translate text</li>
-          <li>Analyze sentiment</li>
-        </ul>
+        <p>Triggered by a user message</p>
       </div>
-      <div class="trigger-card" onclick="toggleOptions(this)">
-        <h3>Message Deleted</h3>
-        <p>Triggered by a deleted message</p>
-        <ul class="options-list">
-          <li>Log deletion</li>
-          <li>Notify moderators</li>
-          <li>Recover message</li>
-          <li>Tag user</li>
-          <li>Store backup</li>
-        </ul>
-      </div>
-      <div class="trigger-card" onclick="toggleOptions(this)">
-        <h3>Poll Vote Added</h3>
-        <p>Triggered by a user voting in a poll</p>
-        <ul class="options-list">
-          <li>Thank voter</li>
-          <li>Update live results</li>
-          <li>Give role</li>
-          <li>Send DM</li>
-          <li>Log vote</li>
-        </ul>
+      <div class="trigger-card" onclick="selectTrigger('button_click')">
+        <h3>Button Click</h3>
+        <p>Triggered by message button click</p>
       </div>
     </div>
 
-    <div class="section-header">Discord Channels</div>
-    <div class="trigger-grid">
-      <div class="trigger-card" onclick="toggleOptions(this)">
-        <h3>Channel Created</h3>
-        <p>Triggered by a new channel creation</p>
-        <ul class="options-list">
-          <li>Welcome message</li>
-          <li>Set permissions</li>
-          <li>Create log entry</li>
-          <li>Assign default role</li>
-          <li>Pin intro</li>
-        </ul>
+    <div class="main-panel">
+      <h2>Configure Action</h2>
+      <div id="actionConfig" class="action-panel" style="display:none;">
+        <label for="triggerName">Trigger</label>
+        <input type="text" id="triggerName" disabled />
+
+        <label for="actionType">Action Type</label>
+        <select id="actionType">
+          <option value="reply">Send Reply</option>
+          <option value="delete">Delete Message</option>
+          <option value="dm">Send DM</option>
+          <option value="add_role">Add Role</option>
+        </select>
+
+        <label for="actionContent">Message / Role ID</label>
+        <input type="text" id="actionContent" placeholder="e.g. Hello, user! or 1234567890" />
+
+        <button class="btn" onclick="saveFlow()">Save Flow</button>
       </div>
-      <div class="trigger-card" onclick="toggleOptions(this)">
-        <h3>Voice State Update</h3>
-        <p>Triggered by voice channel changes</p>
-        <ul class="options-list">
-          <li>Log join/leave</li>
-          <li>Assign VC role</li>
-          <li>Announce in text</li>
-          <li>Track time</li>
-          <li>Send welcome</li>
-        </ul>
-      </div>
+
+      <div class="flow-output" id="flowPreview"></div>
     </div>
   </div>
 
   <script>
-    function toggleOptions(card) {
-      const list = card.querySelector('.options-list');
-      const isOpen = list.style.display === 'block';
-      document.querySelectorAll('.options-list').forEach(el => el.style.display = 'none');
-      list.style.display = isOpen ? 'none' : 'block';
+    let selectedTrigger = null;
+    const flows = [];
+
+    function selectTrigger(triggerKey) {
+      selectedTrigger = triggerKey;
+      document.getElementById('triggerName').value = triggerKey.replace('_', ' ');
+      document.getElementById('actionConfig').style.display = 'block';
+    }
+
+    function saveFlow() {
+      const actionType = document.getElementById('actionType').value;
+      const actionContent = document.getElementById('actionContent').value.trim();
+      if (!selectedTrigger || !actionContent) return alert('Fill all fields');
+
+      const flow = {
+        trigger: selectedTrigger,
+        action: actionType,
+        content: actionContent
+      };
+      flows.push(flow);
+      renderFlows();
+    }
+
+    function renderFlows() {
+      const out = document.getElementById('flowPreview');
+      out.textContent = JSON.stringify(flows, null, 2);
     }
   </script>
 </body>
