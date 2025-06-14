@@ -3,52 +3,51 @@ const path = require('path');
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const { Pool } = require('pg');
 const cors = require('cors');
-
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
-
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// PostgreSQL pool (Render SQL)
+// DB pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
 });
 
-// Ensure table exists on boot
+// Ensure tables exist
 (async () => {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS bots (
-        id SERIAL PRIMARY KEY,
-        token TEXT UNIQUE NOT NULL,
-        username TEXT,
-        avatar_url TEXT,
-        ping_enabled BOOLEAN DEFAULT true,
-        welcome_enabled BOOLEAN DEFAULT false
-      );
-    `);
-    console.log('✅ Table check complete');
-  } catch (err) {
-    console.error('❌ DB init error:', err);
-  }
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS bots (
+      id SERIAL PRIMARY KEY,
+      token TEXT UNIQUE NOT NULL,
+      username TEXT,
+      avatar_url TEXT
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS modules (
+      id SERIAL PRIMARY KEY,
+      bot_token TEXT REFERENCES bots(token) ON DELETE CASCADE,
+      ping_enabled BOOLEAN DEFAULT false,
+      welcome_enabled BOOLEAN DEFAULT false,
+      embed_enabled BOOLEAN DEFAULT false,
+      autoresponder_enabled BOOLEAN DEFAULT false
+    );
+  `);
 })();
 
 let botClient = null;
 let currentToken = null;
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+// Serve UI
+app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/dashboard', (_, res) => res.sendFile(path.join(__dirname, 'dashboard.html')));
 
-app.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dashboard.html'));
-});
-
+// Start bot
 app.post('/start-bot', async (req, res) => {
   const { token } = req.body;
   if (!token) return res.status(400).send('Token required.');
@@ -57,11 +56,7 @@ app.post('/start-bot', async (req, res) => {
     if (botClient) await botClient.destroy();
 
     botClient = new Client({
-      intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-      ],
+      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
       partials: [Partials.Channel],
     });
 
@@ -70,65 +65,81 @@ app.post('/start-bot', async (req, res) => {
       currentToken = token;
 
       await pool.query(`
-        INSERT INTO bots (token, username, avatar_url, ping_enabled, welcome_enabled)
-        VALUES ($1, $2, $3, true, false)
+        INSERT INTO bots (token, username, avatar_url)
+        VALUES ($1, $2, $3)
         ON CONFLICT (token) DO UPDATE
         SET username = EXCLUDED.username,
             avatar_url = EXCLUDED.avatar_url
       `, [token, user.username, user.displayAvatarURL()]);
 
+      await pool.query(`
+        INSERT INTO modules (bot_token)
+        VALUES ($1)
+        ON CONFLICT (bot_token) DO NOTHING
+      `, [token]);
+
       console.log(`✅ Bot ready: ${user.tag}`);
-      res.send('✅ Bot started');
+      res.json({ success: true });
     });
 
     botClient.on('messageCreate', async msg => {
       if (msg.author.bot) return;
+      const mod = await pool.query('SELECT * FROM modules WHERE bot_token = $1', [currentToken]);
+      const m = mod.rows[0];
 
-      const result = await pool.query('SELECT ping_enabled, welcome_enabled FROM bots WHERE token = $1', [currentToken]);
-      const { ping_enabled, welcome_enabled } = result.rows[0];
+      if (!m) return;
 
-      if (ping_enabled && msg.content.toLowerCase() === '!ping') {
+      if (m.ping_enabled && msg.content === '!ping') {
         msg.reply('Pong!');
       }
 
-      if (welcome_enabled && msg.content.toLowerCase() === '!join') {
+      if (m.welcome_enabled && msg.content === '!join') {
         msg.channel.send(`Welcome, ${msg.author.username}!`);
+      }
+
+      if (m.embed_enabled && msg.content === '!embed') {
+        msg.channel.send({ embeds: [{ title: 'Cool Embed', description: 'Hello World!', color: 0xffb800 }] });
+      }
+
+      if (m.autoresponder_enabled && msg.content.toLowerCase().includes('help')) {
+        msg.reply('Need help? Contact an admin!');
       }
     });
 
     await botClient.login(token);
   } catch (err) {
-    console.error('❌ Bot error:', err);
-    res.status(500).send('❌ Invalid token or bot error');
+    console.error('❌ Bot startup error:', err);
+    res.status(500).send('❌ Invalid token or error connecting');
   }
 });
 
-app.get('/bot-info', async (req, res) => {
+// Get bot + module info
+app.get('/bot-info', async (_, res) => {
   try {
-    const result = await pool.query('SELECT username, avatar_url, ping_enabled, welcome_enabled FROM bots ORDER BY id DESC LIMIT 1');
-    res.json(result.rows[0]);
+    const b = await pool.query('SELECT * FROM bots ORDER BY id DESC LIMIT 1');
+    const m = await pool.query('SELECT * FROM modules WHERE bot_token = $1', [b.rows[0].token]);
+    res.json({ ...b.rows[0], ...m.rows[0] });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch bot info' });
+    res.status(500).json({ error: 'Fetch failed' });
   }
 });
 
+// Toggle modules
 app.post('/update-module', async (req, res) => {
   const { module, enabled } = req.body;
+  const valid = ['ping', 'welcome', 'embed', 'autoresponder'];
 
-  if (!['ping', 'welcome'].includes(module)) {
-    return res.status(400).json({ error: 'Invalid module name' });
-  }
-
-  const column = module === 'ping' ? 'ping_enabled' : 'welcome_enabled';
+  if (!valid.includes(module)) return res.status(400).send('Invalid module');
 
   try {
-    await pool.query(`UPDATE bots SET ${column} = $1 WHERE token = $2`, [enabled, currentToken]);
+    await pool.query(
+      `UPDATE modules SET ${module}_enabled = $1 WHERE bot_token = $2`,
+      [enabled, currentToken]
+    );
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to update module' });
+    res.status(500).json({ error: 'Update failed' });
   }
 });
 
-app.listen(port, () => {
-  console.log(`🌐 Server running at http://localhost:${port}`);
-});
+app.listen(port, () => console.log(`🌍 Running on http://localhost:${port}`));
