@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ogbots Dashboard</title>
+  <style>
+    body { background-color: #1a1d29; color: white; font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .nav { display: flex; justify-content: space-around; padding: 10px; border-bottom: 1px solid #fff; cursor: pointer; flex-wrap: wrap; }
+    .nav div:hover { background-color: #333; }
+    .nav div.active { border-bottom: 3px solid #ffb800; font-weight: bold; }
+    .section { display: none; padding: 20px; }
+    .active { display: block; }
+    .btn { background-color: #ffb800; color: black; padding: 10px 20px; border: none; cursor: pointer; margin: 10px; font-weight: bold; font-size: 16px; }
+    input, select { width: 300px; padding: 10px; margin: 10px auto; display: block; font-size: 16px; border-radius: 5px; border: none; }
+    .footer { text-align: center; padding: 20px; font-size: 14px; color: #bbb; }
+    .dash-tabs button { margin: 0 10px; padding: 10px 20px; background: #333; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    .dash-tabs button.active { background-color: #ffb800; color: black; font-weight: bold; }
+    .command-group { margin-top: 20px; }
+    .command-toggle { display: flex; align-items: center; justify-content: space-between; background: #2a2d3f; padding: 10px; border-radius: 5px; margin: 5px 0; }
+    .command-toggle label { flex: 1; text-align: left; padding-left: 10px; }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <div id="nav-create" class="active" onclick="showSection('create')">Create</div>
+    <div id="nav-token" onclick="showSection('token')">Token</div>
+    <div id="nav-connect" onclick="showSection('connect')">Host Bot</div>
+    <div id="nav-dashboard" onclick="showSection('dashboard')">Dashboard</div>
+  </div>
+
+  <div id="create" class="section active">
+    <h1>Welcome to Ogbots!</h1>
+    <button class="btn" onclick="showSection('token')">Get Started</button>
+  </div>
+
+  <div id="token" class="section">
+    <h1>Paste Your Token</h1>
+    <input type="text" id="tokenField" placeholder="Paste your token here" />
+    <button class="btn" onclick="copyToken()">Copy Token</button>
+    <button class="btn" onclick="showSection('connect')">Next Step</button>
+  </div>
+
+  <div id="connect" class="section">
+    <h1>Connect Your Bot</h1>
+    <input type="text" id="connectToken" placeholder="Bot Token" />
+    <button class="btn" onclick="connectBot()">Connect Bot</button>
+    <div id="log"></div>
+  </div>
+
+  <div id="dashboard" class="section">
+    <h1>Dashboard</h1>
+    <div class="dash-tabs">
+      <button class="active" onclick="showDashTab('bots')">Running Bots</button>
+      <button onclick="showDashTab('prefix')">Prefix Commands</button>
+      <button onclick="showDashTab('slash')">Slash Commands</button>
+      <button onclick="showDashTab('ping')">Ping</button>
+    </div>
+
+    <div id="bots" class="dash-content active">
+      <h2>Running Bots</h2>
+      <ul id="botListUl"></ul>
+    </div>
+
+    <div id="prefix" class="dash-content">
+      <h2>Prefix Commands</h2>
+      <div class="command-group">
+        <div class="command-toggle">
+          <label for="say">!say</label>
+          <input type="checkbox" id="say" onchange="toggleCommand(this)">
+        </div>
+        <div class="command-toggle">
+          <label for="uptime">!uptime</label>
+          <input type="checkbox" id="uptime" onchange="toggleCommand(this)">
+        </div>
+      </div>
+    </div>
+
+    <div id="slash" class="dash-content">
+      <h2>Slash Commands</h2>
+      <div class="command-group">
+        <div class="command-toggle">
+          <label for="help">/help</label>
+          <input type="checkbox" id="help" onchange="toggleCommand(this)">
+        </div>
+      </div>
+    </div>
+
+    <div id="ping" class="dash-content">
+      <h2>Ping Command</h2>
+      <div class="command-group">
+        <div class="command-toggle">
+          <label for="ping">!ping</label>
+          <input type="checkbox" id="ping" onchange="toggleCommand(this)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    You're signed in as @ordinarygamerlyt <a href="#">Logout</a>
+  </div>
+
+  <script>
+    let currentToken = '';
+
+    function showSection(id) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      document.querySelectorAll('.nav div').forEach(nav => nav.classList.remove('active'));
+      document.getElementById('nav-' + id).classList.add('active');
+    }
+
+    function copyToken() {
+      const tokenField = document.getElementById('tokenField');
+      tokenField.select();
+      document.execCommand('copy');
+      alert('Token copied!');
+    }
+
+    async function connectBot() {
+      const token = document.getElementById('connectToken').value.trim();
+      const log = document.getElementById('log');
+
+      if (!token) {
+        log.textContent = '❌ Please enter your bot token.';
+        log.style.color = 'red';
+        return;
+      }
+
+      log.textContent = '⏳ Starting bot...';
+      log.style.color = 'white';
+
+      try {
+        const res = await fetch('/start-bot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        const text = await res.text();
+        log.style.color = res.ok ? 'lightgreen' : 'red';
+        log.textContent = text;
+
+        if (res.ok) {
+          currentToken = token;
+          showSection('dashboard');
+          await loadBots();
+        }
+      } catch (err) {
+        log.textContent = '❌ Server error. Try again.';
+        log.style.color = 'red';
+      }
+    }
+
+    async function toggleCommand(el) {
+      const command = el.id;
+      const enabled = el.checked;
+
+      if (!currentToken) return alert('❌ No bot connected.');
+
+      await fetch(`/${enabled ? 'enable' : 'disable'}-command`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: currentToken, command })
+      });
+    }
+
+    function showDashTab(id) {
+      document.querySelectorAll('.dash-content').forEach(c => c.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      document.querySelectorAll('.dash-tabs button').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    async function loadBots() {
+      const res = await fetch('/active-bots');
+      const data = await res.json();
+      const ul = document.getElementById('botListUl');
+      ul.innerHTML = '';
+
+      data.tokens.forEach(token => {
+        const li = document.createElement('li');
+        li.textContent = token.slice(0, 10) + '...';
+        const btn = document.createElement('button');
+        btn.textContent = 'Stop';
+        btn.onclick = async () => {
+          await fetch('/stop-bot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          });
+          await loadBots();
+        };
+        li.appendChild(btn);
+        ul.appendChild(li);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadBots);
+  </script>
+</body>
+</html>
