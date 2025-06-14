@@ -1,127 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Ogbots</title>
-  <style>
-    body { background-color: #1e1e2f; color: #fff; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-    h1, h2 { color: #7289da; }
-    .section { background: #2c2c44; padding: 20px; margin: 10px 0; border-radius: 10px; }
-    .option { margin: 5px 0; }
-    input[type="text"], button { padding: 10px; margin: 5px 0; border: none; border-radius: 5px; }
-    button { background: #7289da; color: #fff; cursor: pointer; }
-    #dashboard { display: none; }
-    .card { background: #2c2c44; padding: 15px; margin: 10px 0; border-radius: 5px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YourBotHost - Discord Bot Hosting</title>
+    <style>
+        body { background-color: #1a1d29; color: #fff; font-family: 'Arial', sans-serif; margin: 0; padding: 0; }
+        .nav { display: flex; justify-content: space-around; padding: 10px; border-bottom: 2px solid #f1c40f; background-color: #0f111a; }
+        .nav div { cursor: pointer; padding: 5px 15px; border-bottom: 2px solid transparent; transition: border-bottom 0.3s; }
+        .nav div:hover { border-bottom: 2px solid #f1c40f; }
+        .section { padding: 20px; text-align: center; }
+        .section h1 { color: #f1c40f; font-size: 2.5em; margin-bottom: 10px; }
+        .section p { color: #a9b7c9; margin-bottom: 20px; }
+        .btn { background-color: #f1c40f; color: #000; padding: 10px 20px; border: none; cursor: pointer; font-weight: bold; margin: 5px; }
+        .btn:hover { opacity: 0.9; }
+        .create-bot, .copy-token, .connect-bot { display: none; padding: 20px; }
+        .create-bot.active, .copy-token.active, .connect-bot.active { display: block; }
+        .sidebar { width: 200px; background-color: #2c2f3e; padding: 10px; float: left; }
+        .sidebar ul { list-style: none; padding: 0; }
+        .sidebar ul li { padding: 10px; color: #a9b7c9; cursor: pointer; }
+        .sidebar ul li:hover { background-color: #3c3f4e; }
+        .sidebar ul li.active { background-color: #3c3f4e; color: #fff; }
+        .main-panel { margin-left: 220px; padding: 20px; background-color: #2c2f3e; border-radius: 5px; }
+        .token-box { background-color: #1a1d29; padding: 10px; margin: 10px 0; border: 1px solid #3c3f4e; border-radius: 3px; }
+        .input-field { width: 100%; padding: 10px; margin: 10px 0; background-color: #1a1d29; border: 1px solid #3c3f4e; color: #fff; }
+        .copy-btn { background-color: #3498db; color: #fff; padding: 5px 10px; border: none; cursor: pointer; }
+        .copy-btn:hover { background-color: #2980b9; }
+    </style>
 </head>
 <body>
-  <h1>Welcome to Ogbots!</h1>
-  <p>Before you can start hosting, you need to create and connect a bot.</p>
-  <a href="https://discord.com/developers/applications">Get Started</a>
-  <br><br>
-  <a href="https://www.youtube.com/watch?v=example">Video tutorial</a>
-
-  <div class="section">
-    <h2>Create Discord Bot</h2>
-    <p>Create a Discord bot on the developer portal.</p>
-  </div>
-
-  <div class="section">
-    <h2>Generate Token</h2>
-    <p>Generate and copy the bot token.</p>
-    <button onclick="showCopyToken()">Copy Token</button>
-  </div>
-
-  <div class="section connect-bot">
-    <h2>Connect Your Bot</h2>
-    <p>Paste your token from the Discord Developer Portal in the field below.</p>
-    <input type="text" id="botToken" placeholder="Enter your bot token">
-    <button onclick="connectBot()">Connect Bot</button>
-    <p>By connecting, you agree to Ogbots' Terms of Service and Privacy Policy.</p>
-    <p>Need help setting up your bot?</p>
-  </div>
-
-  <div id="dashboard" class="section">
-    <h2>Customize Your Bot</h2>
-
-    <div class="card">
-      <h3>Moderation</h3>
-      <div class="option"><input type="checkbox" id="mod1"> Auto-ban spam</div>
-      <div class="option"><input type="checkbox" id="mod2"> Mute offenders</div>
-      <div class="option"><input type="checkbox" id="mod3"> Warn users</div>
-      <div class="option"><input type="checkbox" id="mod4"> Kick inactive</div>
-      <div class="option"><input type="checkbox" id="mod5"> Log actions</div>
+    <div class="nav">
+        <div onclick="showSection('create-bot')">Create Bot</div>
+        <div onclick="showSection('copy-token')">Copy Token</div>
+        <div onclick="showSection('connect-bot')">Connect Bot</div>
     </div>
 
-    <div class="card">
-      <h3>Welcome Messages</h3>
-      <div class="option"><input type="checkbox" id="welcome1"> Send welcome DM</div>
-      <div class="option"><input type="checkbox" id="welcome2"> Announce in channel</div>
-      <div class="option"><input type="checkbox" id="welcome3"> Add welcome role</div>
-      <div class="option"><input type="checkbox" id="welcome4"> Customize message</div>
-      <div class="option"><input type="checkbox" id="welcome5"> Schedule welcome</div>
+    <div class="section create-bot active">
+        <h1>Create a New Bot</h1>
+        <p>Create a new bot on Discord and connect it to YourBotHost.</p>
+        <button class="btn" onclick="createBot()">Get Started</button>
+        <br><br>
+        <button class="btn">Video Tutorial</button>
     </div>
 
-    <!-- Add more cards as needed (Commands, Logging, Fun) -->
+    <div class="create-bot" id="create-bot-panel">
+        <div class="sidebar">
+            <ul>
+                <li>Settings</li>
+                <li class="active">Bot</li>
+                <li>Rich Presence</li>
+                <li>App Testers</li>
+            </ul>
+        </div>
+        <div class="main-panel">
+            <p>Bring your app to life on Discord with a Bot user. Be a part of chat in your users' servers and interact with them directly.</p>
+            <p>A new token was generated. Be sure to copy it as it will not be shown to you again.</p>
+            <div class="token-box">
+                <strong>Bot Token:</strong> <span id="bot-token"></span>
+                <button class="copy-btn" onclick="copyToken()">Copy</button>
+            </div>
+            <p><button class="btn" onclick="showSection('connect-bot')">Next Step</button></p>
+        </div>
+    </div>
 
-    <button onclick="saveSettings()">Save Settings</button>
-  </div>
+    <div class="section connect-bot">
+        <h1>Connect Your Bot</h1>
+        <p>Paste your token from the Discord Developer Portal in the field below.</p>
+        <input type="text" class="input-field" id="connect-token" placeholder="Bot Token">
+        <br>
+        <button class="btn" onclick="connectBot()">Connect Bot</button>
+        <p>By creating a bot on YourBotHost, you agree to our Terms of Service and Privacy Policy, in addition to Discord's applicable terms. YourBotHost may contact you via automated emails or Discord messages to provide critical, non-marketing service notifications.</p>
+        <p>Need help setting up your bot? <a href="#">Join</a> our Discord server.</p>
+    </div>
 
-  <div class="section">
-    <p>You're signed in as @ordinarygamerlyt <a href="#" onclick="logout()">Logout</a></p>
-  </div>
+    <script>
+        let botToken = '';
 
-  <script>
-    function showCopyToken() {
-      alert("Please generate and copy the token from the Discord Developer Portal.");
-    }
-
-    function connectBot() {
-      const token = document.getElementById('botToken').value;
-      fetch('/start-bot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token })
-      })
-      .then(response => response.text())
-      .then(() => {
-        document.querySelector('.connect-bot').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-      })
-      .catch(error => console.error('Error:', error));
-    }
-
-    function saveSettings() {
-      const settings = {
-        moderation: {
-          autoBanSpam: document.getElementById('mod1').checked,
-          muteOffenders: document.getElementById('mod2').checked,
-          warnUsers: document.getElementById('mod3').checked,
-          kickInactive: document.getElementById('mod4').checked,
-          logActions: document.getElementById('mod5').checked
-        },
-        welcome: {
-          sendDMD: document.getElementById('welcome1').checked,
-          announceChannel: document.getElementById('welcome2').checked,
-          addRole: document.getElementById('welcome3').checked,
-          customMessage: document.getElementById('welcome4').checked,
-          scheduleWelcome: document.getElementById('welcome5').checked
+        function showSection(section) {
+            document.querySelectorAll('.create-bot, .copy-token, .connect-bot').forEach(el => el.classList.remove('active'));
+            document.getElementById(section).classList.add('active');
         }
-      };
-      fetch('/save-settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings)
-      })
-      .then(response => response.text())
-      .then(data => alert(data))
-      .catch(error => console.error('Error:', error));
-    }
 
-    function logout() {
-      alert("Logged out successfully.");
-      // Add logout logic here
-    }
-  </script>
+        async function createBot() {
+            try {
+                const response = await fetch('/api/create-bot', { method: 'POST' });
+                const data = await response.json();
+                botToken = data.token;
+                document.getElementById('bot-token').textContent = botToken;
+                showSection('create-bot-panel');
+            } catch (error) {
+                alert('Failed to create bot. Check server connection.');
+            }
+        }
+
+        function copyToken() {
+            if (botToken) {
+                navigator.clipboard.writeText(botToken).then(() => alert('Token copied to clipboard!'));
+            } else {
+                alert('No token to copy. Create a bot first.');
+            }
+        }
+
+        async function connectBot() {
+            const token = document.getElementById('connect-token').value;
+            if (token) {
+                try {
+                    const response = await fetch('/api/connect-bot', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token })
+                    });
+                    const data = await response.json();
+                    if (data.success) alert('Bot connected and hosting started!');
+                    else alert('Failed to connect bot.');
+                } catch (error) {
+                    alert('Error connecting bot. Check server.');
+                }
+            } else {
+                alert('Please enter a valid token.');
+            }
+        }
+    </script>
 </body>
 </html>
