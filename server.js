@@ -22,12 +22,16 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+app.get('/active-bots', (req, res) => {
+  res.json({ count: botClients.size, tokens: Array.from(botClients.keys()) });
+});
+
 app.post('/start-bot', async (req, res) => {
   const { token } = req.body;
   if (!token) return res.status(400).send('Token required.');
 
   if (botClients.has(token)) return res.status(200).send('✅ Bot already running');
-  if (botClients.size >= 3) return res.status(403).send('❌ Bot limit (3) reached.');
+  if (botClients.size >= 3) return res.status(403).send('❌ Maximum of 3 running bots reached.');
 
   try {
     const client = new Client({
@@ -90,6 +94,13 @@ app.post('/enable-command', (req, res) => {
   res.send(`✅ '${command}' enabled`);
 });
 
+app.post('/disable-command', (req, res) => {
+  const { token, command } = req.body;
+  const set = enabledCommands.get(token);
+  if (set) set.delete(command);
+  res.send(`✅ '${command}' disabled`);
+});
+
 app.post('/stop-bot', async (req, res) => {
   const { token } = req.body;
   const client = botClients.get(token);
@@ -105,29 +116,6 @@ app.post('/stop-bot', async (req, res) => {
     console.error('Failed to stop bot:', err);
     res.status(500).send('❌ Error stopping bot');
   }
-});
-
-app.get('/api/commands', async (req, res) => {
-  const { rows } = await pool.query('SELECT * FROM commands ORDER BY id DESC');
-  res.json(rows);
-});
-
-app.post('/api/commands', async (req, res) => {
-  const { command } = req.body;
-  if (!command) return res.status(400).send('Command required');
-  await pool.query('INSERT INTO commands (command) VALUES ($1)', [command]);
-  res.send('✅ Command saved');
-});
-
-app.get('/api/settings', async (req, res) => {
-  const { rows } = await pool.query('SELECT * FROM settings LIMIT 1');
-  res.json(rows[0]);
-});
-
-app.post('/api/settings', async (req, res) => {
-  const { prefix, exampleSetting } = req.body;
-  await pool.query('UPDATE settings SET prefix = $1, example_setting = $2 WHERE id = 1', [prefix, exampleSetting]);
-  res.send('✅ Settings updated');
 });
 
 app.get('/api/logs', async (req, res) => {
