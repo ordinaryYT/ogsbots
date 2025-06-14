@@ -83,7 +83,7 @@
 
         async function createBot() {
             try {
-                const response = await fetch('/api/create-bot', { method: 'POST' });
+                const response = await fetch('/create-bot', { method: 'POST' });
                 const data = await response.json();
                 botToken = data.token;
                 document.getElementById('bot-token').textContent = botToken;
@@ -105,7 +105,7 @@
             const token = document.getElementById('connect-token').value;
             if (token) {
                 try {
-                    const response = await fetch('/api/connect-bot', {
+                    const response = await fetch('/connect-bot', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ token })
