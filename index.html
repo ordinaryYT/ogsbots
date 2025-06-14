@@ -5,75 +5,86 @@
   <title>Bot Dashboard</title>
   <style>
     body {
-      background-color: #1a1d29;
+      background-color: #12141d;
       color: white;
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       text-align: center;
-      padding: 50px;
+      padding: 40px;
+    }
+    .card {
+      background: #1e2130;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px auto;
+      width: 300px;
+      box-shadow: 0 0 10px #000;
     }
     img {
       border-radius: 50%;
-      width: 100px;
+      width: 80px;
+      margin-bottom: 10px;
     }
-    .module {
-      margin: 20px;
+    h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .switch {
+      margin: 10px 0;
+    }
+    label {
+      display: block;
+      margin: 10px 0;
+    }
+    input[type="checkbox"] {
+      transform: scale(1.5);
+      margin-right: 10px;
     }
     .btn {
-      padding: 10px 20px;
       background: #ffb800;
       border: none;
-      cursor: pointer;
+      padding: 10px 20px;
       font-weight: bold;
+      cursor: pointer;
+      border-radius: 5px;
     }
   </style>
 </head>
 <body>
-  <h1 id="botName">Loading...</h1>
-  <img id="botAvatar" src="" alt="Bot Avatar" />
-
-  <div class="module">
-    <h3>Ping Command</h3>
-    <input type="checkbox" id="pingToggle" />
+  <div class="card">
+    <img id="avatar" src="" />
+    <h2 id="botName">Loading...</h2>
+    <div class="switch"><label><input type="checkbox" id="ping" /> Ping Command (!ping)</label></div>
+    <div class="switch"><label><input type="checkbox" id="welcome" /> Welcome Message (!join)</label></div>
+    <div class="switch"><label><input type="checkbox" id="embed" /> Embed Sender (!embed)</label></div>
+    <div class="switch"><label><input type="checkbox" id="autoresponder" /> Auto Responder (keywords)</label></div>
+    <button class="btn" onclick="saveModules()">Save Changes</button>
   </div>
-
-  <div class="module">
-    <h3>Welcome Message</h3>
-    <input type="checkbox" id="welcomeToggle" />
-  </div>
-
-  <button class="btn" onclick="updateModules()">Save Changes</button>
 
   <script>
-    async function loadBotInfo() {
-      const res = await fetch('/bot-info');
-      const data = await res.json();
-
+    async function load() {
+      const data = await fetch('/bot-info').then(r => r.json());
       document.getElementById('botName').textContent = data.username;
-      document.getElementById('botAvatar').src = data.avatar_url;
-      document.getElementById('pingToggle').checked = data.ping_enabled;
-      document.getElementById('welcomeToggle').checked = data.welcome_enabled;
+      document.getElementById('avatar').src = data.avatar_url;
+      document.getElementById('ping').checked = data.ping_enabled;
+      document.getElementById('welcome').checked = data.welcome_enabled;
+      document.getElementById('embed').checked = data.embed_enabled;
+      document.getElementById('autoresponder').checked = data.autoresponder_enabled;
     }
 
-    async function updateModules() {
-      const pingEnabled = document.getElementById('pingToggle').checked;
-      const welcomeEnabled = document.getElementById('welcomeToggle').checked;
-
-      await fetch('/update-module', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ module: 'ping', enabled: pingEnabled })
-      });
-
-      await fetch('/update-module', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ module: 'welcome', enabled: welcomeEnabled })
-      });
-
-      alert('✅ Modules updated!');
+    async function saveModules() {
+      const modules = ['ping', 'welcome', 'embed', 'autoresponder'];
+      for (let m of modules) {
+        const checked = document.getElementById(m).checked;
+        await fetch('/update-module', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ module: m, enabled: checked })
+        });
+      }
+      alert('✅ Saved!');
     }
 
-    loadBotInfo();
+    load();
   </script>
 </body>
 </html>
